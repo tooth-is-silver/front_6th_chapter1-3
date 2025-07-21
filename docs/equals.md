@@ -15,6 +15,18 @@ export function shallowEquals(objA: any, objB: any): boolean {
 }
 ```
 
+#### 고민한 내용
+
+```ts
+// 1. 두 값이 정확히 같나요?
+if (a === b) return true;
+
+// 두 값이 유효한 값인가요?
+if (a === null || b === null || a === undefined || b === undefined) return false;
+```
+
+처음에 해당 코드를 추가하여 둘 중에 한 값이 null이나 undefined일 경우의 예외처리를 추가해야한다고 생각했다. 하지만 생각해보니 이미 첫 조건문에서 두 값이 같은지 확인하고 있기 때문에 nullable한 값을 중복으로 체크하지 않아도 되어 불필요한 코드를 삭제하였다.
+
 ## deepEquals
 
 ```ts
