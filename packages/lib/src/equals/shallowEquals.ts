@@ -35,11 +35,10 @@ export function shallowEquals(a: unknown, b: unknown): boolean {
     return a.source === b.source && a.flags === b.flags;
   }
 
-  // 둘 다 객체네요.
+  // 둘 값이 key, value를 가지는 객체네요.
   // 두 객체의 키 개수가 같은가요?
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
-  console.log(a, b);
 
   if (aKeys.length !== bKeys.length) return false;
 
