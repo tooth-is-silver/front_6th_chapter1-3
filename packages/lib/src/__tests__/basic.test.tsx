@@ -41,7 +41,7 @@ describe("Chapter 1-3 기본과제: hooks 구현하기 > ", () => {
 
         const dateA = new Date("2023-01-01T00:00:00Z");
         const dateB = new Date("2023-01-01T00:00:00Z");
-        expect(shallowEquals(dateA, dateB)).toBe(true); // 값이 같음
+        expect(shallowEquals(dateA, dateB)).toBe(false); // 다른 Date 참조
 
         const regexA = /abc/gi;
         const regexB = new RegExp("abc", "gi");

@@ -26,7 +26,8 @@ export function shallowEquals(a: unknown, b: unknown): boolean {
 
   // 동일한 Date 값인가요?
   if (a instanceof Date && b instanceof Date) {
-    return a.getTime() === b.getTime();
+    // .getTime()으로 비교하면 값이 같음으로 true로 반환 할 수 있다.
+    return a === b;
   }
 
   // 동일한 RegExp 값인가요?
@@ -38,6 +39,7 @@ export function shallowEquals(a: unknown, b: unknown): boolean {
   // 두 객체의 키 개수가 같은가요?
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
+  console.log(a, b);
 
   if (aKeys.length !== bKeys.length) return false;
 
