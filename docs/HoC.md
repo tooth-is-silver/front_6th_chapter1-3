@@ -1,35 +1,22 @@
-# HoC (High Order Component) 만들기
+# HoC (High Order Component) 만들기 - 고차 컴포넌트
 
 ## memo
 
+고차 컴포넌트란? 컴포넌트를 인자로 받아 변화된 값을 추가해서 다시 컴포넌트로 반환하는 함수이다.
+`memo(<컴포넌트 />)`를 구현하기 위해선 이전 값과 반환될 컴포넌트를 만들기 위해 초기 값을 설정해주어야 한다.
+useRef를 이용하여 현재의 초기 값을 설정해준다. 초기 값을 저장하기 위해 **useRef를 쓰는 이유**는 뭘까?
+일단 렌더링이 되면 초기 값이 매번 초기화 된다. 이 때문에 어떤 값이 컴포넌트에 들어왔는지 추적이 불가능하여 비교할 수가 없다.
+미리 구현한 useRef의 경우 객체 형태이기 때문에 같은 참조를 유지하여 리렌더링이 트리거되지 않는다. `.current`를 통한 값 변경이 가능하다.
+
+useRef를 활용하여 이전 값이 있는지 확인하고, 비교할 이전 값이 없다면 이전 값을 현재 값으로 변경해준다. 이전 값이 있다면 비교해서 다르다면 현재 값으로 변경한다. 미리 구현한 `shallowEquals`를 활용한다.
+
 ```ts
-import { shallowEquals } from "../equalities";
-
-// memo HOC는 컴포넌트의 props를 얕은 비교하여 불필요한 리렌더링을 방지합니다.
-export function memo<P extends object>(Component: ComponentType<P>, equals = shallowEquals) {
-  // 1. 이전 props를 저장할 ref 생성
-
-  // 2. 메모이제이션된 컴포넌트 생성
-
-  // 3. equals 함수를 사용하여 props 비교
-
-  // 4. props가 변경된 경우에만 새로운 렌더링 수행
-
-  return Component;
-}
+  if (prevPropsRef.current === null || !shallowEquals(prevPropsRef.current, props))
 ```
+
+값을 비교해서 메모이제이션 된 상태를 확인하기 위해 여태까지 만든 커스텀 훅에서도 shallowEquals를 사용했다. memo에서도 컴포넌트에 전달된 props를 shallowEquals로 비교하고, 이전 컴포넌트를 참조해서 props를 업데이트하고 해당 컴포넌트를 반환한다.
+테스트 코드에서는 `toHaveHBeenCalledTimes('number')`로 현재 컴포넌트가 몇 번 참조되었는지(렌더링 횟수), props가 변경되지 않았다면 참조가 변하지 않았는지 판단한다. useRef를 사용했기 때문에 리렌더가 트리거 되지 않는 이상 렌더링 횟수는 증가되지 않는다.
 
 ## deepMemo
 
-```ts
-import { deepEquals } from "../equalities";
-import { ComponentType } from "react";
-import { memo } from "./memo.ts";
-
-// deepMemo HOC는 컴포넌트의 props를 깊은 비교하여 불필요한 리렌더링을 방지합니다.
-export function deepMemo<P extends object>(Component: FunctionComponent<P>) {
-  // deepEquals 함수를 사용하여 props 비교
-  // 앞에서 만든 memo를 사용
-  return memo(Component, deepEquals);
-}
-```
+미리 만들어놓은 memo를 활용하여 구현했다. 끝.
