@@ -6,8 +6,8 @@ export function useMemo<T>(factory: () => T, _deps: DependencyList, _equals = sh
   const memoRef = useRef<T | null>(null);
   const depsRef = useRef<DependencyList>([]);
 
+  // 의존성 _deps가 변경되었거나 memoRef가 초기화 값인 경우
   if (!_equals(depsRef.current, _deps) || memoRef.current === null) {
-    // deps가 변경되었거나 memoRef가 초기화된 경우
     memoRef.current = factory();
     depsRef.current = _deps;
   }
