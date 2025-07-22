@@ -27,11 +27,11 @@ export function useRef<T>(initialValue: T): { current: T } {
 
 ## useMemo
 
-**AS-IS**
 이전 설계 방식은 아래와 같았다. 1번 부터 4번까지 제시된 내용대로 구현했는데 무엇이 문제일까?
 들어온 값을 무조건 memoRef에 할당하여 변경이 되든 안되든 반환하고 있었다. 게다가 변경되었을 경우에 또 `factory`함수를 실행하여 불필요한 함수 요청이 과하게 진행된다.
 
 ```ts
+// AS-IS
 export function useMemo<T>(factory: () => T, _deps: DependencyList, _equals = shallowEquals): T {
   // 1. 이전 의존성과 결과를 저장할 ref 생성
   const memoRef = useRef<T>(factory());
@@ -47,11 +47,11 @@ export function useMemo<T>(factory: () => T, _deps: DependencyList, _equals = sh
 }
 ```
 
-**TO-BE**
 그래서 아래와 같이 변경하였다! 첫 초기 값을 지정한 후, 의존성을 비교하여 업데이트 해준다.
 생각해보니 우리가 흔히 사용하고 있는 hooks의 의존성 배열에 빈 배열 처리도 필요해보인다. `ex. useMemo(() => {},[])` 자주 사용하고 있는 구문인데 직접 구현하려다보니 망각하고 있던 부분이었다.
 
 ```ts
+// TO-BE
 export function useMemo<T>(factory: () => T, _deps: DependencyList, _equals = shallowEquals): T {
   const memoRef = useRef<T | null>(null);
   const depsRef = useRef<DependencyList>([]);
@@ -131,13 +131,13 @@ export const useShallowState = <T>(initialValue: T): [T, Dispatch<SetStateAction
 
 ## useAutoCallback
 
-```ts
-import type { AnyFunction } from "../types";
-import { useCallback } from "./useCallback";
-import { useRef } from "./useRef";
+useAutoCallback 훅은 렌더링 되는 시점에 전달받은 함수를 항상 최신화해야하며, useCallback으로 해당 함수를 기억하여 참조를 유지하고 받은 인자들로 내부 값을 업데이트해준다.
 
-// useCallback과 useRef를 이용하여 useAutoCallback
-export const useAutoCallback = <T extends AnyFunction>(fn: T): T => {
-  return fn;
-};
+useCallback 함수가 있는데 왜 굳이 useAutoCallback을 사용해야하는가? 궁금해서 chatGpt에게 물어봤다.
+
+```
+// useAutoCallback이 useCallback보다 나은 이유
+1. 의존성 관리 불필요. 의존성 배열의 값이 변경될때마다 useCallback은 새로운 함수를 생성한다.
+2. useCallback은 새로운 함수가 재생성되므로 불필요한 컴포넌트 리렌더링이 발생되지 않는다.
+3. 그러므로 useAutoCallback을 사용한다!
 ```
