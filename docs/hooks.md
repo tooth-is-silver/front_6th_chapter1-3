@@ -65,17 +65,7 @@ export function useMemo<T>(factory: () => T, _deps: DependencyList, _equals = sh
 
 ## useDeepMemo
 
-```ts
-import { DependencyList } from "react";
-import { useMemo } from "./useMemo";
-import { deepEquals } from "../equalities";
-
-// useDeepMemo 훅은 깊은 비교를 사용하여 값을 메모이제이션합니다.
-export function useDeepMemo<T>(factory: () => T, deps: DependencyList): T {
-  // 1. useMemo를 사용하되, 비교 함수로 deepEquals를 사용
-  return useMemo(factory, deps, deepEquals);
-}
-```
+````
 
 ## useCallback
 
@@ -86,7 +76,7 @@ useMemo가 기본적으로 `_equals`를 인자로 받으니, useCallback함수�
 export function useCallback<T extends Function>(factory: T, _deps: DependencyList, _equals = shallowEquals) {
   return useMemo<T>(() => factory, _deps, _equals);
 }
-```
+````
 
 ## useShallowState
 
@@ -180,3 +170,77 @@ useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot?) 에서 subscrib
 **listener를 add하고 delete하는 이유는?**
 
 메모리 누수 때문이다. 역시나 이벤트 위임때 경험했던 이벤트가 무수히 많이 등록됐는데 언마운트시 삭제해주지 않으면 동일한 함수들이 계속 쌓이기 때문에 컴포넌트가 언마운트되거나 필요없는 경우에 자동 정리되도록 delete해주는 것이다.
+
+# useShallowSelector
+
+zustand에서 shallow함수를 참고하여 useShallowSelector를 구현했다.
+다른 훅들과 동일하게 useRef로 초기 설정을 해주고 변경된 값이 있는지 비교한 후 동일한 selector에 변경된 값만 업데이트하여 반환해준다.
+
+# useStore
+
+**1차 고민**
+
+useStore 내부에서 useSyncExternalStore와 useShallowSelector를 사용하여 store의 구독 상태를 확인하는 로직이 필요하다. 우선 useSyncExternalStore와 useShallowSelector를 사용해서 변수를 하나 만들어줬다.
+
+useStore의 발제 자료에서 useStore의 사용처를 확인해보니 createStore로 만들어진 친구를 인자로 받고 있었다. 그리고 해당 인자는 useStore내부에서 initialState와 subscribe를 사용해야할 것 같았다. useSyncExternalStore에서 구독 함수, 현재 상태를 반환하는 함수, 초기값(선택)을 받아야하기 때문에 store에서 getState와 subscribe함수를 가져와야겠다고 판단되었다.
+
+그리고 useShallowSelector는 selector함수를 인자로 받는다.
+음.. 근데 뭔가 이상하다 그리고 이 코드들로 뭘 반환해주고 뭘 확인해야하는 걸까?
+
+```ts
+const { getState, subscribe } = store;
+const syncExternal = useSyncExternalStore(subscribe, getState);
+const shallowSelector = useShallowSelector(selector);
+```
+
+**2차 고민**
+
+팀원에게 물어보고 react 라이브러리에 `useSyncExternalStoreWithSelector.tsx`가 있다는 것을 찾았다. 거기서 확인한 내용은 다음과 같다.
+
+```ts
+export function useSyncExternalStoreWithSelector<Snapshot, Selection>(
+  // useStore로 받는 subscribe
+  subscribe: (() => void) => () => void,
+   // useStore로 받는 getState
+  getSnapshot: () => Snapshot,
+   // 서버 렌더링 시 초기 값
+  getServerSnapshot: void | null | (() => Snapshot),
+   // useStore로 받는 selector
+  selector: (snapshot: Snapshot) => Selection,
+   // equals는 useShallowSelector 내부에서 사용 중
+  isEqual?: (a: Selection, b: Selection) => boolean,
+): Selection {
+  ...
+  // getSelection = getSnapshotWithSelector
+  const [getSelection, getServerSelection] = useMemo(() => {
+    // 우리가 만든 useShallowSelector
+    const memoizedSelector = (nextSnapshot: Snapshot) => {
+      ...
+    };
+    const getSnapshotWithSelector = () => memoizedSelector(getSnapshot());
+    const getServerSnapshotWithSelector = () => memoizedSelector(getServerSnapshot());
+    return [getSnapshotWithSelector, getServerSnapshotWithSelector];
+  }
+  const value = useSyncExternalStore(
+    subscribe,
+    getSelection,
+    getServerSelection,
+  );
+  ...
+
+  return value;
+}
+```
+
+로직이 동일하다! 우리가 구현해야할 부분은 마지막의 `return value`부분이며, `value`는 useSyncExternalStore에 미리 인자로 받은 subscribe와 selector를 전달하고 useShallowSelector를 활용하여 스냅샷을 전달한다.
+여기서 서버로 전달받는 초기 값도 스냅샷 전달 중이므로 동일하게 useShallowSelector를 활용한다.
+
+```ts
+const { getState, subscribe } = store;
+const value = useSyncExternalStore(
+  subscribe,
+  () => shallowSelector(getState()),
+  () => shallowSelector(getState()),
+);
+return value;
+```
