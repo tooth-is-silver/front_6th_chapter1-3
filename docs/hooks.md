@@ -141,3 +141,42 @@ useCallback 함수가 있는데 왜 굳이 useAutoCallback을 사용해야하는
 2. useCallback은 새로운 함수가 재생성되므로 불필요한 컴포넌트 리렌더링이 발생되지 않는다.
 3. 그러므로 useAutoCallback을 사용한다!
 ```
+
+## createObserver
+
+useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot?) 에서 subscribe로 사용하는 함수가 createObserver이다
+
+```ts
+...
+  const isOnline = useSyncExternalStore(
+    // subscribe: 저장소 변경을 구독하는 함수
+    (callback) => {
+      window.addEventListener('online', callback);
+      window.addEventListener('offline', callback);
+      return () => {
+        window.removeEventListener('online', callback);
+        window.removeEventListener('offline', callback);
+      };
+    },
+    // getSnapshot: 현재 상태를 반환하는 함수
+    () => navigator.onLine,
+    // getServerSnapshot: 서버 렌더링 시 초기값 (선택사항)
+    () => true
+  );
+...
+```
+
+발제 자료 중에 위와 같은 useSyncExternalStore을 사용할 때 구독 함수에 addEventListener이후에 return 하면서 removeEventListenr하는 부분을 확인할 수 있다. createObserver에서도 동일하게 구독하는 코드와 구독 해제 하는 코드를 구현해주면 되는 부분이었다.
+
+**Listener가 뭐야? 왜 new Set에 () => void타입을 명시해준거지?**
+
+말 그대로 이벤트 리스너! 동작하는 함수들을 subscript하기 위해 Listener로 등록. 대신 이벤트 위임에서 많이 보았던 new Set을 사용하여 이벤트 중복 구독을 방지한다.
+옵저버 패턴에서 new Set을 많이 사용한다고 한다.
+
+**옵저버 패턴이란?**
+
+1:N 의존성을 특징으로 하며 발행(Publishing) 상태를 변경하면 해당 상태를 구독(Subscribing)하고 있는 구독자들에게 관찰자(Obserber)가 상태가 변경되었다고 통지(Notify)하는 소프트웨어 디자인 패턴 중 하나이다.
+
+**listener를 add하고 delete하는 이유는?**
+
+메모리 누수 때문이다. 역시나 이벤트 위임때 경험했던 이벤트가 무수히 많이 등록됐는데 언마운트시 삭제해주지 않으면 동일한 함수들이 계속 쌓이기 때문에 컴포넌트가 언마운트되거나 필요없는 경우에 자동 정리되도록 delete해주는 것이다.
