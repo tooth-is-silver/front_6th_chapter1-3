@@ -171,12 +171,12 @@ useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot?) 에서 subscrib
 
 메모리 누수 때문이다. 역시나 이벤트 위임때 경험했던 이벤트가 무수히 많이 등록됐는데 언마운트시 삭제해주지 않으면 동일한 함수들이 계속 쌓이기 때문에 컴포넌트가 언마운트되거나 필요없는 경우에 자동 정리되도록 delete해주는 것이다.
 
-# useShallowSelector
+## useShallowSelector
 
 zustand에서 shallow함수를 참고하여 useShallowSelector를 구현했다.
 다른 훅들과 동일하게 useRef로 초기 설정을 해주고 변경된 값이 있는지 비교한 후 동일한 selector에 변경된 값만 업데이트하여 반환해준다.
 
-# useStore
+## useStore
 
 **1차 고민**
 
