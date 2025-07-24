@@ -56,11 +56,11 @@ export const ToastProvider = memo(({ children }: PropsWithChildren) => {
   }));
 
   return (
-    <ToastContext value={value}>
+    <ToastContext.Provider value={value}>
       <ToastStateContext.Provider value={state}>
         {children}
         {visible && createPortal(<Toast />, document.body)}
       </ToastStateContext.Provider>
-    </ToastContext>
+    </ToastContext.Provider>
   );
 });
